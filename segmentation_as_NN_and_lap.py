@@ -1,7 +1,8 @@
-"""White Matter Tract Segmentation as Multiple Linear Assignment Problems
+"""White Matter Tract Segmentation as Multiple Linear Assignment
+Problems (LAPs).
 """
-
 import numpy as np
+
 from dissimilarity import compute_dissimilarity, dissimilarity
 from dipy.tracking.distances import bundles_distances_mam
 from sklearn.neighbors import KDTree
@@ -16,31 +17,32 @@ try:
 except ImportError:
     print("WARNING: Cythonized LAPJV not available. Falling back to Python.")
     print("WARNING: See README.txt")
-   
-   
+    from linear_assignment_numpy import LinearAssignment
+
 try:
     from joblib import Parallel, delayed
     joblib_available = True
 except ImportError:
     joblib_available = False
-   
+
 
 def show_tract(segmented_tract, color):
-   """Visualization of the segmented tract.
-   """ 
-   ren = fvtk.ren()           
-   fvtk.add(ren, fvtk.line(segmented_tract.tolist(),
-                           colors=color,
-                           linewidth=2,
-                           opacity=0.3))
-   fvtk.show(ren)
-   fvtk.clear(ren)
+    """Visualization of the segmented tract.
+    """
+    ren = fvtk.ren()
+    fvtk.add(ren, fvtk.line(segmented_tract.tolist(),
+                            colors=color,
+                            linewidth=2,
+                            opacity=0.3))
+    fvtk.show(ren)
+    fvtk.clear(ren)
 
 
-
-def ranking_schema(superset_estimated_target_tract_idx,superset_estimated_target_tract_cost):
-    """ Rank all the extracted streamlines estimated by the LAP with different examples (superset)   
-    accoring to the number of times it selected and the total cost
+def ranking_schema(superset_estimated_target_tract_idx,
+                   superset_estimated_target_tract_cost):
+    """Rank all the extracted streamlines estimated by the LAP with
+    different examples (superset) accoring to the number of times it
+    selected and the total cost
     """
     idxs = np.unique(superset_estimated_target_tract_idx)
     how_many_times_selected = np.array([(superset_estimated_target_tract_idx == idx).sum() for idx in idxs])
