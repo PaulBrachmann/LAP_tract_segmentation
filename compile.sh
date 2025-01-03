@@ -1,0 +1,1 @@
+python3 setup_lapjv.py build_ext --inplace 

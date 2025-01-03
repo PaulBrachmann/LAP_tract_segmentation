@@ -12,8 +12,10 @@ MIT License
 from __future__ import division
 import numpy as np
 from dipy.tracking.distances import bundles_distances_mam
+
 try:
     from joblib import Parallel, delayed, cpu_count
+
     joblib_available = True
 except:
     joblib_available = False
@@ -62,7 +64,7 @@ def furthest_first_traversal(tracks, k, distance, permutation=True):
         idx = np.random.permutation(len(tracks))
         tracks = tracks[idx]
     else:
-        idx = np.arange(len(tracks), dtype=np.int)
+        idx = np.arange(len(tracks), dtype=int)
 
     T = [0]
     while len(T) < k:
@@ -118,9 +120,7 @@ def subset_furthest_first(tracks, k, distance, permutation=True, c=2.0):
     else:
         idx = range(size)
 
-    return idx[furthest_first_traversal(tracks[idx],
-                                        k, distance,
-                                        permutation=False)]
+    return idx[furthest_first_traversal(tracks[idx], k, distance, permutation=False)]
 
 
 def dissimilarity(tracks, prototypes, distance, n_jobs=-1, verbose=False):
@@ -168,12 +168,17 @@ def dissimilarity(tracks, prototypes, distance, n_jobs=-1, verbose=False):
             print("Parallel computation of the dissimilarity matrix: %s cpus." % n_jobs)
 
         if n_jobs > 1:
-            tmp = np.linspace(0, len(tracks), n_jobs + 1).astype(np.int)
+            tmp = np.linspace(0, len(tracks), n_jobs + 1).astype(int)
         else:  # corner case: joblib detected 1 cpu only.
             tmp = (0, len(tracks))
 
         chunks = zip(tmp[:-1], tmp[1:])
-        dissimilarity_matrix = np.vstack(Parallel(n_jobs=n_jobs)(delayed(distance)(tracks[start:stop], prototypes) for start, stop in chunks))
+        dissimilarity_matrix = np.vstack(
+            Parallel(n_jobs=n_jobs)(
+                delayed(distance)(tracks[start:stop], prototypes)
+                for start, stop in chunks
+            )
+        )
     else:
         dissimilarity_matrix = distance(tracks, prototypes)
 
@@ -183,11 +188,14 @@ def dissimilarity(tracks, prototypes, distance, n_jobs=-1, verbose=False):
     return dissimilarity_matrix
 
 
-def compute_dissimilarity(tracks, num_prototypes=40,
-                          distance=bundles_distances_mam,
-                          prototype_policy='sff',
-                          n_jobs=-1,
-                          verbose=False):
+def compute_dissimilarity(
+    tracks,
+    num_prototypes=40,
+    distance=bundles_distances_mam,
+    prototype_policy="sff",
+    n_jobs=-1,
+    verbose=False,
+):
     """Compute the dissimilarity (distance) matrix between tracks and
     prototypes, where prototypes are selected among the tracks with a
     given policy.
@@ -224,14 +232,16 @@ def compute_dissimilarity(tracks, num_prototypes=40,
     -----
     """
     if verbose:
-        print("Generating %s prototypes with policy %s." % (num_prototypes, prototype_policy))
+        print(
+            "Generating %s prototypes with policy %s."
+            % (num_prototypes, prototype_policy)
+        )
 
-    if prototype_policy == 'random':
+    if prototype_policy == "random":
         prototype_idx = np.random.permutation(len(tracks))[:num_prototypes]
-    elif prototype_policy == 'fft':
-        prototype_idx = furthest_first_traversal(tracks,
-                                                 num_prototypes, distance)
-    elif prototype_policy == 'sff':
+    elif prototype_policy == "fft":
+        prototype_idx = furthest_first_traversal(tracks, num_prototypes, distance)
+    elif prototype_policy == "sff":
         prototype_idx = subset_furthest_first(tracks, num_prototypes, distance)
     else:
         if verbose:
@@ -240,6 +250,7 @@ def compute_dissimilarity(tracks, num_prototypes=40,
         raise Exception
 
     prototypes = [tracks[i] for i in prototype_idx]
-    dissimilarity_matrix = dissimilarity(tracks, prototypes, distance,
-                                         n_jobs=n_jobs, verbose=verbose)
+    dissimilarity_matrix = dissimilarity(
+        tracks, prototypes, distance, n_jobs=n_jobs, verbose=verbose
+    )
     return dissimilarity_matrix, prototype_idx
